@@ -14,7 +14,7 @@ LANG_FILE = os.path.expanduser("~/.aider_ui_langs.json")
 DEFAULT_LANGS = {
     "zh_TW": {
         "lang_name": "繁體中文",
-        "app_title": "🚀 Aider 視覺化中控台 - 國際開源版",
+        "app_title": "Aider 視覺化中控台",
         "settings_title": "🧠 模型設定與金鑰管理",
         "platform": "選擇平台:",
         "model": "指定模型:",
@@ -116,7 +116,7 @@ DEFAULT_LANGS = {
     },
     "en": {
         "lang_name": "English",
-        "app_title": "🚀 Aider Visual Console - Open Source Edition",
+        "app_title": "Aider Visual Console",
         "settings_title": "🧠 Model & API Key Settings",
         "platform": "Platform:",
         "model": "Model:",
