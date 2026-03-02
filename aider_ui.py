@@ -533,8 +533,31 @@ class AiderUI:
         tree_frame = ttk.Frame(left_vertical_paned)
         left_vertical_paned.add(tree_frame, stretch="always", height=250)
         ttk.Label(tree_frame, text=self._("project_files")).pack(anchor=tk.W, pady=(0, 5))
-        self.tree = ttk.Treeview(tree_frame, selectmode="extended")
-        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        # 🌟 建立專屬容器來放置 Treeview 與雙向滾動條
+        tree_container = ttk.Frame(tree_frame)
+        tree_container.pack(fill=tk.BOTH, expand=True)
+
+        # 建立 Treeview (尚未放置)
+        self.tree = ttk.Treeview(tree_container, selectmode="extended")
+        self.tree.column("#0", width=800, minwidth=800, stretch=tk.NO)
+
+        # 建立垂直與水平滾動條，並綁定 Treeview 的 view 方法
+        tree_scroll_y = ttk.Scrollbar(tree_container, orient=tk.VERTICAL, command=self.tree.yview)
+        tree_scroll_x = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL, command=self.tree.xview)
+
+        # 將滾動條設定回 Treeview
+        self.tree.configure(yscrollcommand=tree_scroll_y.set, xscrollcommand=tree_scroll_x.set)
+
+        # 使用 Grid 排版將它們組合在一起
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        tree_scroll_y.grid(row=0, column=1, sticky="ns")
+        tree_scroll_x.grid(row=1, column=0, sticky="ew")
+
+        # 讓 Treeview 所在的格子自動擴展填充剩餘空間
+        tree_container.grid_rowconfigure(0, weight=1)
+        tree_container.grid_columnconfigure(0, weight=1)
+
         self.tree.bind("<Double-1>", self.on_tree_double_click)
         self.tree.bind("<<TreeviewOpen>>", self.on_tree_open)
         
@@ -549,8 +572,30 @@ class AiderUI:
         
         self.list_label = ttk.Label(list_frame, text="")
         self.list_label.pack(anchor=tk.W, pady=(0, 5))
-        self.selected_listbox = tk.Listbox(list_frame)
-        self.selected_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 2))
+
+        # 🌟 建立專屬容器來放置 Listbox 與雙向滾動條
+        list_container = ttk.Frame(list_frame)
+        list_container.pack(fill=tk.BOTH, expand=True, pady=(0, 2))
+
+        # 建立 Listbox
+        self.selected_listbox = tk.Listbox(list_container)
+
+        # 建立垂直與水平滾動條，並綁定 Listbox 的 view 方法
+        list_scroll_y = ttk.Scrollbar(list_container, orient=tk.VERTICAL, command=self.selected_listbox.yview)
+        list_scroll_x = ttk.Scrollbar(list_container, orient=tk.HORIZONTAL, command=self.selected_listbox.xview)
+
+        # 將滾動條狀態回傳給 Listbox
+        self.selected_listbox.configure(yscrollcommand=list_scroll_y.set, xscrollcommand=list_scroll_x.set)
+
+        # 使用 Grid 完美貼合佈局
+        self.selected_listbox.grid(row=0, column=0, sticky="nsew")
+        list_scroll_y.grid(row=0, column=1, sticky="ns")
+        list_scroll_x.grid(row=1, column=0, sticky="ew")
+
+        # 讓 Listbox 自動填滿剩餘空間
+        list_container.grid_rowconfigure(0, weight=1)
+        list_container.grid_columnconfigure(0, weight=1)
+
         self.selected_listbox.bind("<Double-1>", self.on_listbox_double_click)
 
         # ---------------- 右側：動態變形區 ----------------
@@ -631,8 +676,27 @@ class AiderUI:
         ttk.Button(input_header_frame, text=self._("copy_paste"), command=self.copy_paste_command).pack(side=tk.RIGHT, padx=2)
         ttk.Button(input_header_frame, text=self._("clear"), command=self.clear_prompt).pack(side=tk.RIGHT, padx=2)
 
-        self.prompt_text = tk.Text(input_frame)
-        self.prompt_text.pack(fill=tk.BOTH, expand=True, padx=(0, 2))
+        # 🌟 建立專屬容器來放置 Text 與雙向滾動條
+        prompt_container = ttk.Frame(input_frame)
+        prompt_container.pack(fill=tk.BOTH, expand=True, padx=(0, 2))
+
+        # 建立 Text，設定 wrap=tk.NONE 停止自動換行，讓水平滾動生效
+        self.prompt_text = tk.Text(prompt_container, wrap=tk.NONE)
+
+        # 建立垂直與水平滾動條
+        prompt_scroll_y = ttk.Scrollbar(prompt_container, orient=tk.VERTICAL, command=self.prompt_text.yview)
+        prompt_scroll_x = ttk.Scrollbar(prompt_container, orient=tk.HORIZONTAL, command=self.prompt_text.xview)
+
+        self.prompt_text.configure(yscrollcommand=prompt_scroll_y.set, xscrollcommand=prompt_scroll_x.set)
+
+        # 使用 Grid 排版完美貼合
+        self.prompt_text.grid(row=0, column=0, sticky="nsew")
+        prompt_scroll_y.grid(row=0, column=1, sticky="ns")
+        prompt_scroll_x.grid(row=1, column=0, sticky="ew")
+
+        prompt_container.grid_rowconfigure(0, weight=1)
+        prompt_container.grid_columnconfigure(0, weight=1)
+
         self.prompt_text.bind("<Control-Return>", lambda e: self.copy_prompt_command())
 
         # 🌟 帶有搜尋列的百科區
@@ -650,16 +714,31 @@ class AiderUI:
         search_entry.bind("<KeyRelease>", self.filter_help)
         
         columns = ("cmd", "desc")
-        self.help_tree = ttk.Treeview(help_frame, columns=columns, show="headings")
+        
+        # 🌟 建立專屬容器來放置 Help Treeview 與雙向滾動條
+        help_container = ttk.Frame(help_frame)
+        help_container.pack(fill=tk.BOTH, expand=True)
+
+        self.help_tree = ttk.Treeview(help_container, columns=columns, show="headings")
         self.help_tree.heading("cmd", text=self._("cmd_header"))
         self.help_tree.heading("desc", text=self._("desc_header"))
-        self.help_tree.column("cmd", width=95, stretch=tk.NO, anchor=tk.CENTER)
-        self.help_tree.column("desc", width=120, stretch=tk.YES)
+        self.help_tree.column("cmd", width=120, stretch=tk.NO, anchor=tk.CENTER)
+        # 🌟 將 stretch 改為 tk.NO，並給予足夠的寬度來觸發水平滾動
+        self.help_tree.column("desc", width=600, minwidth=600, stretch=tk.NO)
         
-        help_scroll = ttk.Scrollbar(help_frame, orient=tk.VERTICAL, command=self.help_tree.yview)
-        self.help_tree.configure(yscroll=help_scroll.set)
-        self.help_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        help_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        # 建立垂直與水平滾動條
+        help_scroll_y = ttk.Scrollbar(help_container, orient=tk.VERTICAL, command=self.help_tree.yview)
+        help_scroll_x = ttk.Scrollbar(help_container, orient=tk.HORIZONTAL, command=self.help_tree.xview)
+        
+        self.help_tree.configure(yscrollcommand=help_scroll_y.set, xscrollcommand=help_scroll_x.set)
+        
+        # 使用 Grid 排版完美貼合
+        self.help_tree.grid(row=0, column=0, sticky="nsew")
+        help_scroll_y.grid(row=0, column=1, sticky="ns")
+        help_scroll_x.grid(row=1, column=0, sticky="ew")
+        
+        help_container.grid_rowconfigure(0, weight=1)
+        help_container.grid_columnconfigure(0, weight=1)
 
         self.help_tree.bind("<Double-1>", self.on_help_double_click)
         self.filter_help()
