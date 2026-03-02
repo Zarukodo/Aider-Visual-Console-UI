@@ -5,10 +5,6 @@
 Aider 是一款極其強大的 AI 輔助寫程式工具，但其高達 40 多種的終端機 `/` 指令常常讓人記不住。本專案透過 Python 內建的 Tkinter 打造了一個無縫的「常駐側邊欄」，讓你透過點擊、拖拉、快捷鍵，就能發揮 Aider 100% 的開發火力！
 
 ![alt text](image.png)
-<video width="560" height="315" controls>
-  <source src="0302.mp4" type="video/mp4">
-</video>
-```
 ---
 
 ## ✨ 核心特色功能
@@ -41,7 +37,8 @@ Aider 是一款極其強大的 AI 輔助寫程式工具，但其高達 40 多種
 ## 🌟 終極設定：輸入 `ai` 一鍵喚醒 UI (強烈推薦)
 
 為避免每次都要輸入完整路徑啟動，建議設定全域快捷鍵。以後在任何專案資料夾下，只要輸入 `ai` 就能瞬間在背景喚醒中控台！
-
+[📽️ 效果示範影片](https://youtu.be/zX_mRlBkgeU)
+---
 ### 🪟 Windows (PowerShell) 用戶
 1. 打開 PowerShell，輸入以下指令開啟設定檔：
    `notepad $PROFILE`
