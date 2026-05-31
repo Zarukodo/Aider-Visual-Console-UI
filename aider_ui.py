@@ -5,6 +5,7 @@ import sys
 import json
 import subprocess
 import threading
+import shutil
 
 CONFIG_FILE = os.path.expanduser("~/.aider_ui_config.json")
 TEMP_CMD_FILE = os.path.expanduser("~/.aider_cmd.ps1")
@@ -491,9 +492,12 @@ class AiderUI:
         provider_combo.bind("<<ComboboxSelected>>", self.on_provider_change)
 
         ttk.Label(top_left, text=self._("model")).grid(row=1, column=0, sticky=tk.W, pady=2)
-        self.model_combo = ttk.Combobox(top_left, width=45)
+        self.model_combo = ttk.Combobox(top_left, width=35)
         self.model_combo.grid(row=1, column=1, sticky=tk.W, pady=2, padx=5)
-        ttk.Button(top_left, text=self._("manage_list"), command=self.open_model_manager).grid(row=1, column=2, padx=2)
+        model_btn_frame = ttk.Frame(top_left)
+        model_btn_frame.grid(row=1, column=2, sticky=tk.W, padx=2)
+        ttk.Button(model_btn_frame, text="🔄 切換 (/model)", command=self.macro_model_switch).pack(side=tk.LEFT, padx=2)
+        ttk.Button(model_btn_frame, text=self._("manage_list"), command=self.open_model_manager).pack(side=tk.LEFT, padx=2)
 
         ttk.Label(top_left, text=self._("api_key")).grid(row=2, column=0, sticky=tk.W, pady=2)
         self.key_entry = ttk.Entry(top_left, width=35, show="*")
@@ -871,6 +875,31 @@ class AiderUI:
     def macro_readonly(self):
         if not self.selected_files_set: return messagebox.showwarning(self._("msg_warn"), self._("msg_select_file"))
         self.copy_and_toast("/read-only " + " ".join([f'"{f}"' for f in self.selected_files_set]))
+    
+    def inject_persona(self):
+        # 你的全域人格存放處
+        global_persona = os.path.expanduser("~/.aider.instructions.md")
+        # 💡 改成 Aider 預設會自動讀取的檔名，保持優雅
+        local_persona = os.path.join(os.getcwd(), ".aider.conventions.md")
+        gitignore_path = os.path.join(os.getcwd(), ".gitignore")
+
+        if os.path.exists(global_persona) and not os.path.exists(local_persona):
+            try:
+                shutil.copy(global_persona, local_persona)
+                
+                # 💡 記得這裡的字串也要跟著改，避免把舊的檔名寫進 gitignore
+                ignore_entry = "\n# Aider Persona\n.aider.conventions.md\n"
+                if os.path.exists(gitignore_path):
+                    with open(gitignore_path, "r", encoding="utf-8") as f:
+                        ignores = f.read()
+                    if ".aider.conventions.md" not in ignores:
+                        with open(gitignore_path, "a", encoding="utf-8") as f:
+                            f.write(ignore_entry)
+                else:
+                    with open(gitignore_path, "w", encoding="utf-8") as f:
+                        f.write(ignore_entry)
+            except Exception as e:
+                print(f"人格注入失敗: {e}")
 
     def get_startup_cmd(self):
         raw_model = self.model_combo.get().strip()
@@ -892,17 +921,31 @@ class AiderUI:
         message_arg = f'-m "{prompt}"' if prompt else ""
         
         mode_arg = f"--chat-mode {mode}" if mode != "code" else ""
+        persona_file = os.path.join(os.getcwd(), ".aider.conventions.md")
+        persona_arg = f'--read "{persona_file}"' if os.path.exists(persona_file) else ""
         env_map = {"OpenRouter": "OPENROUTER_API_KEY", "Gemini": "GEMINI_API_KEY", "DeepSeek": "DEEPSEEK_API_KEY", "Anthropic": "ANTHROPIC_API_KEY", "OpenAI": "OPENAI_API_KEY"}
         
-        env_setup = []
+        env_setup_ps = []
+        env_setup_unix = []
         for prov, key in self.config["keys"].items():
-            if key: env_setup.append(f'$env:{env_map.get(prov)}="{key}"')
-        env_str = "; ".join(env_setup) + ("; " if env_setup else "")
+            if key: 
+                env_map_key = env_map.get(prov)
+                env_setup_ps.append(f'$env:{env_map_key}="{key}"')
+                env_setup_unix.append(f'{env_map_key}="{key}"')
+
+        if sys.platform == "win32":
+            # Windows (預設使用 PowerShell 語法)
+            env_str = "; ".join(env_setup_ps) + ("; " if env_setup_ps else "")
+        else:
+            # Mac / Linux (使用 bash/zsh 語法)
+            env_str = " ".join(env_setup_unix) + (" " if env_setup_unix else "")
         
-        return f'{env_str}aider --model {clean_model} {mode_arg} --map-tokens 1024 {files_args} {message_arg}'.strip()
+        return f'{env_str}aider --model {clean_model} {mode_arg} {persona_arg} --map-tokens 1024 {files_args} {message_arg}'.strip()
 
     def copy_startup_command(self):
-        if cmd := self.get_startup_cmd(): self.copy_and_toast(cmd)
+        self.inject_persona()
+        if cmd := self.get_startup_cmd(): 
+            self.copy_and_toast(cmd)
 
 if __name__ == "__main__":
     app = AiderUI(tk.Tk())
